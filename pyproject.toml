@@ -47,6 +47,10 @@ dev = [
     "safety>=3.0.0",
     "alembic>=1.13.0",
 ]
+prod = [
+    "redis>=5.0.0",
+    "uvloop>=0.17.0",
+]
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

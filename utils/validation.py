@@ -2,12 +2,14 @@
 
 import logging
 import re
-import time
+from typing import Tuple
+
+from utils.rate_limiter import rate_limiter
 
 logger = logging.getLogger(__name__)
 
 
-def validate_request_title(title: str) -> tuple[bool, str]:
+def validate_request_title(title: str) -> Tuple[bool, str]:
     """Validate request title.
 
     Args:
@@ -28,7 +30,7 @@ def validate_request_title(title: str) -> tuple[bool, str]:
     return True, ""
 
 
-def validate_request_description(description: str) -> tuple[bool, str]:
+def validate_request_description(description: str) -> Tuple[bool, str]:
     """Validate request description.
 
     Args:
@@ -49,7 +51,7 @@ def validate_request_description(description: str) -> tuple[bool, str]:
     return True, ""
 
 
-def validate_location(location: str) -> tuple[bool, str]:
+def validate_location(location: str) -> Tuple[bool, str]:
     """Validate location.
 
     Args:
@@ -70,7 +72,7 @@ def validate_location(location: str) -> tuple[bool, str]:
     return True, ""
 
 
-def validate_comment(comment: str) -> tuple[bool, str]:
+def validate_comment(comment: str) -> Tuple[bool, str]:
     """Validate comment.
 
     Args:
@@ -108,51 +110,3 @@ def sanitize_text(text: str) -> str:
         text = text[:10000] + "..."
 
     return text
-
-
-class RateLimiter:
-    """Simple in-memory rate limiter to protect against spam."""
-
-    def __init__(self) -> None:
-        """Initialize rate limiter."""
-        self.requests: dict[str, list[float]] = {}
-
-    def is_allowed(
-        self,
-        user_id: int,
-        action: str = "default",
-        max_requests: int = 5,
-        time_window: int = 60,
-    ) -> bool:
-        """Check if request is allowed.
-
-        Args:
-            user_id: User ID
-            action: Action name for grouping
-            max_requests: Maximum number of requests allowed
-            time_window: Time window in seconds
-
-        Returns:
-            True if request is allowed, False otherwise
-        """
-        key = f"{user_id}_{action}"
-        current_time = time.time()
-
-        if key not in self.requests:
-            self.requests[key] = []
-
-        # Clean old requests
-        self.requests[key] = [t for t in self.requests[key] if current_time - t < time_window]
-
-        # Check limit
-        if len(self.requests[key]) >= max_requests:
-            logger.warning(f"Rate limit exceeded for {key}")
-            return False
-
-        # Add current request
-        self.requests[key].append(current_time)
-        return True
-
-
-# Global rate limiter instance
-rate_limiter = RateLimiter()

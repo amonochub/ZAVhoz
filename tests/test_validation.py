@@ -8,8 +8,8 @@ from utils.validation import (
     validate_location,
     validate_comment,
     sanitize_text,
-    RateLimiter,
 )
+from utils.rate_limiter import rate_limiter, MemoryRateLimiter
 
 
 class TestValidateRequestTitle:
@@ -189,50 +189,54 @@ class TestSanitizeText:
 class TestRateLimiter:
     """Test rate limiter."""
 
-    def test_rate_limiter_allows_first_requests(self) -> None:
+    @pytest.mark.asyncio
+    async def test_rate_limiter_allows_first_requests(self) -> None:
         """Test that first requests are allowed."""
-        limiter = RateLimiter()
+        limiter = MemoryRateLimiter()
         user_id = 123
 
         for _ in range(5):
-            assert limiter.is_allowed(user_id, "test", max_requests=5, time_window=60) is True
+            assert await limiter.is_allowed(user_id, "test", max_requests=5, time_window=60) is True
 
-    def test_rate_limiter_blocks_excess_requests(self) -> None:
+    @pytest.mark.asyncio
+    async def test_rate_limiter_blocks_excess_requests(self) -> None:
         """Test that excess requests are blocked."""
-        limiter = RateLimiter()
+        limiter = MemoryRateLimiter()
         user_id = 123
 
         for _ in range(5):
-            limiter.is_allowed(user_id, "test", max_requests=5, time_window=60)
+            await limiter.is_allowed(user_id, "test", max_requests=5, time_window=60)
 
         # 6th request should be blocked
-        assert limiter.is_allowed(user_id, "test", max_requests=5, time_window=60) is False
+        assert await limiter.is_allowed(user_id, "test", max_requests=5, time_window=60) is False
 
-    def test_rate_limiter_different_actions(self) -> None:
+    @pytest.mark.asyncio
+    async def test_rate_limiter_different_actions(self) -> None:
         """Test that different actions have separate limits."""
-        limiter = RateLimiter()
+        limiter = MemoryRateLimiter()
         user_id = 123
 
         # Fill up action1
         for _ in range(5):
-            limiter.is_allowed(user_id, "action1", max_requests=5, time_window=60)
+            await limiter.is_allowed(user_id, "action1", max_requests=5, time_window=60)
 
         # action1 should be blocked
-        assert limiter.is_allowed(user_id, "action1", max_requests=5, time_window=60) is False
+        assert await limiter.is_allowed(user_id, "action1", max_requests=5, time_window=60) is False
 
         # action2 should still work
-        assert limiter.is_allowed(user_id, "action2", max_requests=5, time_window=60) is True
+        assert await limiter.is_allowed(user_id, "action2", max_requests=5, time_window=60) is True
 
-    def test_rate_limiter_different_users(self) -> None:
+    @pytest.mark.asyncio
+    async def test_rate_limiter_different_users(self) -> None:
         """Test that different users have separate limits."""
-        limiter = RateLimiter()
+        limiter = MemoryRateLimiter()
 
         # Fill up user1
         for _ in range(5):
-            limiter.is_allowed(111, "test", max_requests=5, time_window=60)
+            await limiter.is_allowed(111, "test", max_requests=5, time_window=60)
 
         # user1 should be blocked
-        assert limiter.is_allowed(111, "test", max_requests=5, time_window=60) is False
+        assert await limiter.is_allowed(111, "test", max_requests=5, time_window=60) is False
 
         # user2 should still work
-        assert limiter.is_allowed(222, "test", max_requests=5, time_window=60) is True
+        assert await limiter.is_allowed(222, "test", max_requests=5, time_window=60) is True
