@@ -1,12 +1,16 @@
-from aiogram import types, F
+from aiogram import F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy import select
-from database.connection import get_db
-from models import Request, Status
+
+from models import Request
 from utils.auth import require_auth
-from utils.keyboard import get_main_menu_keyboard, get_priority_keyboard, get_request_actions_keyboard, get_back_keyboard
-from utils.messages import format_request_list, format_request_info
+from utils.keyboard import (
+    get_back_keyboard,
+    get_main_menu_keyboard,
+)
+from utils.messages import format_request_list
+
 
 class CreateRequestStates(StatesGroup):
     waiting_for_description = State()  # Фото/текст описание

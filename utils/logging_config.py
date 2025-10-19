@@ -39,7 +39,7 @@ def add_timestamp(logger, method_name, event_dict):
 def configure_structlog() -> None:
     """Configure structlog for structured logging."""
     # Timestamper
-    timestamper = structlog.processors.TimeStamper(fmt="iso")
+    structlog.processors.TimeStamper(fmt="iso")
 
     # Shared processors
     shared_processors = [

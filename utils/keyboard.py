@@ -1,5 +1,7 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from models import Priority, Status
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+from models import Priority
+
 
 def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
     """Главное меню"""

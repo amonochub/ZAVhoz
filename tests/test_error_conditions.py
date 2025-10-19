@@ -19,21 +19,21 @@ class TestErrorConditions:
         """Test validation fails on empty title."""
         is_valid, msg = validate_request_title("")
         assert not is_valid
-        assert "cannot be empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     @pytest.mark.asyncio
     async def test_empty_description_validation(self) -> None:
         """Test validation fails on empty description."""
         is_valid, msg = validate_request_description("")
         assert not is_valid
-        assert "cannot be empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     @pytest.mark.asyncio
     async def test_empty_location_validation(self) -> None:
         """Test validation fails on empty location."""
         is_valid, msg = validate_location("")
         assert not is_valid
-        assert "cannot be empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     @pytest.mark.asyncio
     async def test_invalid_telegram_id(self, db_session: any) -> None:

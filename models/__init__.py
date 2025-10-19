@@ -1,8 +1,8 @@
 # Модели базы данных
 from .base import Base
-from .user import User
-from .request import Request, Priority, Status
-from .file import File
 from .comment import Comment
+from .file import File
+from .request import Priority, Request, Status
+from .user import User
 
 __all__ = ["Base", "User", "Request", "Priority", "Status", "File", "Comment"]

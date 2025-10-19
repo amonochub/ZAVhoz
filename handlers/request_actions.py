@@ -1,14 +1,16 @@
-from aiogram import types, F
+from datetime import datetime
+
+from aiogram import F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy import select
-from datetime import datetime
-from database.connection import get_db
-from models import Request, Status, Comment, File
+
+from models import Comment, File, Request, Status
 from utils.auth import require_auth
-from utils.keyboard import get_request_actions_keyboard, get_back_keyboard
+from utils.keyboard import get_back_keyboard, get_request_actions_keyboard
 from utils.messages import format_request_info
-from utils.validation import validate_comment, rate_limiter
+from utils.validation import rate_limiter, validate_comment
+
 
 class CommentStates(StatesGroup):
     waiting_for_comment = State()
@@ -35,12 +37,12 @@ async def view_request_callback(callback: types.CallbackQuery, user, session):
     keyboard = get_request_actions_keyboard(request.id, user.role == "admin")
 
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    
+
     # Отправляем фото если они есть
     file_stmt = select(File).where(File.request_id == request_id)
     file_result = await session.execute(file_stmt)
     files = file_result.scalars().all()
-    
+
     if files:
         from bot.main import bot
         for file in files:
@@ -54,7 +56,7 @@ async def view_request_callback(callback: types.CallbackQuery, user, session):
                 except Exception as e:
                     import logging
                     logging.error(f"Error sending photo: {e}")
-    
+
     await callback.answer()
 
 @require_auth
@@ -79,8 +81,8 @@ async def take_request_callback(callback: types.CallbackQuery, user, session):
     await session.commit()
 
     # Отправляем уведомление пользователю
-    from utils.notifications import get_notification_service
     from bot.main import bot
+    from utils.notifications import get_notification_service
     notification_service = get_notification_service(bot)
     if notification_service:
         await notification_service.notify_user_status_change(request)
@@ -113,8 +115,8 @@ async def complete_request_callback(callback: types.CallbackQuery, user, session
     await session.commit()
 
     # Отправляем уведомление пользователю
-    from utils.notifications import get_notification_service
     from bot.main import bot
+    from utils.notifications import get_notification_service
     notification_service = get_notification_service(bot)
     if notification_service:
         await notification_service.notify_user_status_change(request)
@@ -146,8 +148,8 @@ async def reject_request_callback(callback: types.CallbackQuery, user, session):
     await session.commit()
 
     # Отправляем уведомление пользователю
-    from utils.notifications import get_notification_service
     from bot.main import bot
+    from utils.notifications import get_notification_service
     notification_service = get_notification_service(bot)
     if notification_service:
         await notification_service.notify_user_status_change(request)

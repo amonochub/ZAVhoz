@@ -1,5 +1,6 @@
-from models import Request, Status, Priority
-from datetime import datetime
+
+from models import Priority, Request, Status
+
 
 def format_request_info(request: Request, show_user: bool = False) -> str:
     """Форматирование информации о заявке"""

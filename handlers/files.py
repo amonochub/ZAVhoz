@@ -1,7 +1,8 @@
-from aiogram import types, F
-from database.connection import get_db
+from aiogram import F, types
+
 from models import File
 from utils.auth import require_auth
+
 
 @require_auth
 async def handle_photo(message: types.Message, user, session):

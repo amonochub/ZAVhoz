@@ -3,17 +3,16 @@
 import logging
 import re
 import time
-from typing import Any, Tuple
 
 logger = logging.getLogger(__name__)
 
 
-def validate_request_title(title: str) -> Tuple[bool, str]:
+def validate_request_title(title: str) -> tuple[bool, str]:
     """Validate request title.
-    
+
     Args:
         title: Request title to validate
-        
+
     Returns:
         Tuple of (is_valid, error_message)
     """
@@ -29,12 +28,12 @@ def validate_request_title(title: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_request_description(description: str) -> Tuple[bool, str]:
+def validate_request_description(description: str) -> tuple[bool, str]:
     """Validate request description.
-    
+
     Args:
         description: Request description to validate
-        
+
     Returns:
         Tuple of (is_valid, error_message)
     """
@@ -50,12 +49,12 @@ def validate_request_description(description: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_location(location: str) -> Tuple[bool, str]:
+def validate_location(location: str) -> tuple[bool, str]:
     """Validate location.
-    
+
     Args:
         location: Location to validate
-        
+
     Returns:
         Tuple of (is_valid, error_message)
     """
@@ -71,12 +70,12 @@ def validate_location(location: str) -> Tuple[bool, str]:
     return True, ""
 
 
-def validate_comment(comment: str) -> Tuple[bool, str]:
+def validate_comment(comment: str) -> tuple[bool, str]:
     """Validate comment.
-    
+
     Args:
         comment: Comment to validate
-        
+
     Returns:
         Tuple of (is_valid, error_message)
     """
@@ -91,10 +90,10 @@ def validate_comment(comment: str) -> Tuple[bool, str]:
 
 def sanitize_text(text: str) -> str:
     """Sanitize text by removing dangerous characters and limiting length.
-    
+
     Args:
         text: Text to sanitize
-        
+
     Returns:
         Sanitized text
     """
@@ -126,13 +125,13 @@ class RateLimiter:
         time_window: int = 60,
     ) -> bool:
         """Check if request is allowed.
-        
+
         Args:
             user_id: User ID
             action: Action name for grouping
             max_requests: Maximum number of requests allowed
             time_window: Time window in seconds
-            
+
         Returns:
             True if request is allowed, False otherwise
         """

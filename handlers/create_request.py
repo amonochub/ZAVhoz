@@ -1,13 +1,14 @@
-from aiogram import types, F
+from aiogram import F, types
 from aiogram.fsm.context import FSMContext
-from sqlalchemy import select
-from database.connection import get_db
-from models import Request, File, Priority
+
+from models import File, Priority, Request
 from utils.auth import require_auth
-from utils.keyboard import get_priority_keyboard, get_main_menu_keyboard, get_back_keyboard
+from utils.keyboard import get_back_keyboard, get_main_menu_keyboard, get_priority_keyboard
 from utils.messages import format_request_info
-from utils.validation import validate_location, rate_limiter
+from utils.validation import rate_limiter
+
 from .menu import CreateRequestStates
+
 
 def get_yes_no_keyboard():
     """Клавиатура Да/Нет"""
@@ -68,7 +69,7 @@ async def additional_yes_callback(callback: types.CallbackQuery, state: FSMConte
         [types.InlineKeyboardButton(text="💬 Добавить комментарий", callback_data="add_comment")],
         [types.InlineKeyboardButton(text="✅ Готово, выбрать приоритет", callback_data="go_priority")]
     ])
-    
+
     await callback.message.edit_text(
         "📝 Что вы хотите дополнить?",
         reply_markup=keyboard
@@ -95,7 +96,7 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
     """Выбран приоритет - создаём заявку"""
     import logging
     logger = logging.getLogger(__name__)
-    
+
     try:
         priority_value = callback.data.replace("priority_", "")
         logger.info(f"Priority selected: {priority_value}")
@@ -103,7 +104,7 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
 
         data = await state.get_data()
         logger.info(f"State data: {data}")
-        
+
         # Создаём заявку
         request = Request(
             user_id=user.id,
@@ -130,14 +131,14 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
             logger.info(f"File attached to request {request.id}")
 
         # Отправляем уведомление администратору
-        from utils.notifications import get_notification_service
         from bot.main import bot
-        
+        from utils.notifications import get_notification_service
+
         notification_service = get_notification_service(bot)
         if notification_service:
             logger.info(f"Sending notification to admin about request {request.id}")
             await notification_service.notify_admin_new_request(request)
-            logger.info(f"✅ Notification sent successfully")
+            logger.info("✅ Notification sent successfully")
         else:
             logger.error("Notification service not available")
 
@@ -149,8 +150,8 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
 
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         await callback.answer()
-        logger.info(f"User notified about successful request creation")
-        
+        logger.info("User notified about successful request creation")
+
     except Exception as e:
         logger.error(f"Error creating request: {e}", exc_info=True)
         await callback.message.edit_text(
@@ -194,35 +195,35 @@ async def location_or_comment_received(update: types.Message, state: FSMContext,
     """Получена локация или комментарий"""
     message = update  # update is the Message object for message handlers
     data = await state.get_data()
-    
+
     if data.get('add_location'):
         # Пользователь указывает локацию
         location = message.text.strip()
         if not location or len(location) < 2:
             await message.reply("❌ Локация слишком короткая. Минимум 2 символа.\n\n💡 Попробуйте заново:")
             return
-        
+
         if len(location) > 100:
             await message.reply("❌ Локация слишком длинная. Максимум 100 символов.\n\n💡 Попробуйте заново:")
             return
-        
+
         await state.update_data(location=location)
         await message.reply("✅ Локация сохранена!")
-        
+
     elif data.get('add_comment'):
         # Пользователь добавляет комментарий
         comment = message.text.strip()
         if not comment or len(comment) < 2:
             await message.reply("❌ Комментарий слишком короткий. Минимум 2 символа.\n\n💡 Попробуйте заново:")
             return
-        
+
         if len(comment) > 500:
             await message.reply("❌ Комментарий слишком длинный. Максимум 500 символов.\n\n💡 Попробуйте заново:")
             return
-        
+
         await state.update_data(comment=comment)
         await message.reply("✅ Комментарий сохранён!")
-    
+
     # Показываем меню что дальше
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="📍 Указать локацию", callback_data="add_location")],
@@ -230,23 +231,23 @@ async def location_or_comment_received(update: types.Message, state: FSMContext,
         [types.InlineKeyboardButton(text="✅ Готово, выбрать приоритет", callback_data="go_priority")],
         [types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_create")]
     ])
-    
+
     await message.reply(
         "📝 Что дальше?",
         reply_markup=keyboard
     )
-    
+
     await state.update_data(add_location=False, add_comment=False)
 
 @require_auth
 async def go_priority_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Перейти к выбору приоритета"""
     data = await state.get_data()
-    
+
     # Обновляем локацию если её нет
     if 'location' not in data:
         await state.update_data(location="Не указано")
-    
+
     await state.set_state(CreateRequestStates.waiting_for_priority)
     keyboard = get_priority_keyboard()
     await callback.message.edit_text(

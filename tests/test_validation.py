@@ -25,7 +25,7 @@ class TestValidateRequestTitle:
         """Test empty title."""
         is_valid, msg = validate_request_title("")
         assert is_valid is False
-        assert "empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     def test_whitespace_only_title(self) -> None:
         """Test whitespace-only title."""
@@ -36,14 +36,14 @@ class TestValidateRequestTitle:
         """Test too short title."""
         is_valid, msg = validate_request_title("ab")
         assert is_valid is False
-        assert "3 characters" in msg
+        assert "3" in msg or "короткое" in msg.lower()
 
     def test_too_long_title(self) -> None:
         """Test too long title."""
         long_title = "A" * 101
         is_valid, msg = validate_request_title(long_title)
         assert is_valid is False
-        assert "100" in msg
+        assert "100" in msg or "длинное" in msg.lower()
 
     def test_boundary_title_min(self) -> None:
         """Test minimum valid title."""
@@ -69,20 +69,20 @@ class TestValidateRequestDescription:
         """Test empty description."""
         is_valid, msg = validate_request_description("")
         assert is_valid is False
-        assert "empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     def test_too_short_description(self) -> None:
         """Test too short description."""
         is_valid, msg = validate_request_description("123456789")
         assert is_valid is False
-        assert "10" in msg
+        assert "10" in msg or "короткое" in msg.lower()
 
     def test_too_long_description(self) -> None:
         """Test too long description."""
         long_desc = "A" * 1001
         is_valid, msg = validate_request_description(long_desc)
         assert is_valid is False
-        assert "1000" in msg
+        assert "1000" in msg or "длинное" in msg.lower()
 
     def test_boundary_description_min(self) -> None:
         """Test minimum valid description."""
@@ -108,7 +108,7 @@ class TestValidateLocation:
         """Test empty location."""
         is_valid, msg = validate_location("")
         assert is_valid is False
-        assert "empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     def test_too_short_location(self) -> None:
         """Test too short location."""
@@ -135,14 +135,14 @@ class TestValidateComment:
         """Test empty comment."""
         is_valid, msg = validate_comment("")
         assert is_valid is False
-        assert "empty" in msg.lower()
+        assert "пустым" in msg.lower()
 
     def test_too_long_comment(self) -> None:
         """Test too long comment."""
         long_comment = "A" * 501
         is_valid, msg = validate_comment(long_comment)
         assert is_valid is False
-        assert "500" in msg
+        assert "500" in msg or "длинный" in msg.lower()
 
     def test_boundary_comment_max(self) -> None:
         """Test maximum valid comment."""

@@ -1,8 +1,10 @@
 import csv
 import io
 from datetime import datetime
+
 from database.connection import get_db
-from models import Request, Status, Priority
+from models import Request, Status
+
 
 async def export_requests_to_csv(requests: list[Request]) -> str:
     """Экспорт заявок в CSV"""

@@ -12,12 +12,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize structured logging
-from utils.logging_config import init_logging, get_logger
+from utils.logging_config import get_logger, init_logging
+
 init_logging()
 logger = get_logger(__name__)
 
 # Initialize Sentry for error tracking
 from utils.sentry_config import init_sentry
+
 init_sentry()
 
 # Get bot token
@@ -32,16 +34,17 @@ dp = Dispatcher(storage=storage)
 
 # Initialize notification service
 from utils.notifications import get_notification_service
+
 notification_service = get_notification_service(bot)
 
 # Import and register handlers
 from handlers import (
-    register_start_handlers,
-    register_menu_handlers,
-    register_create_request_handlers,
     register_admin_handlers,
-    register_request_actions_handlers,
+    register_create_request_handlers,
     register_file_handlers,
+    register_menu_handlers,
+    register_request_actions_handlers,
+    register_start_handlers,
 )
 
 

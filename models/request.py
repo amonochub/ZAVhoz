@@ -1,8 +1,12 @@
 import enum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum as SQLEnum, Text, JSON
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
+
 from .base import Base
+
 
 class Priority(enum.Enum):
     HIGH = "высокий"
@@ -40,7 +44,7 @@ class Request(Base):
         """Добавить запись в историю"""
         if not self.history:
             self.history = []
-        
+
         entry = {
             "timestamp": datetime.utcnow().isoformat(),
             "action": action,

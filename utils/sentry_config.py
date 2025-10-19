@@ -1,7 +1,6 @@
 """Sentry error tracking configuration."""
 
 import os
-from typing import Optional
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -10,7 +9,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 load_dotenv()
 
 # Sentry Configuration
-SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN")
+SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
 SENTRY_ENABLED: bool = os.getenv("SENTRY_ENABLED", "false").lower() == "true"
 SENTRY_ENVIRONMENT: str = os.getenv("SENTRY_ENVIRONMENT", "development")
 SENTRY_TRACES_SAMPLE_RATE: float = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "1.0"))
@@ -41,12 +40,12 @@ def init_sentry() -> None:
     )
 
 
-def before_send_handler(event: dict, hint: dict) -> Optional[dict]:
+def before_send_handler(event: dict, hint: dict) -> dict | None:
     """Filter and process events before sending to Sentry."""
     # Don't send events for specific exceptions
     if "exc_info" in hint:
         exc_type, exc_value, tb = hint["exc_info"]
-        
+
         # Ignore specific exceptions
         if exc_type in [KeyboardInterrupt, SystemExit]:
             return None
@@ -63,7 +62,7 @@ def capture_exception(exception: Exception, context: dict = None) -> None:
         if context:
             for key, value in context.items():
                 scope.set_context(key, value)
-        
+
         sentry_sdk.capture_exception(exception)
 
 
@@ -76,7 +75,7 @@ def capture_message(message: str, level: str = "info", context: dict = None) -> 
         if context:
             for key, value in context.items():
                 scope.set_context(key, value)
-        
+
         sentry_sdk.capture_message(message, level=level)
 
 

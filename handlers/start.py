@@ -1,9 +1,11 @@
 from aiogram import types
 from aiogram.filters import Command
+
+from database.connection import get_db
 from utils.auth import get_or_create_user, is_admin
 from utils.keyboard import get_main_menu_keyboard
 from utils.messages import get_welcome_message
-from database.connection import get_db
+
 
 async def start_handler(message: types.Message):
     """Обработчик команды /start"""

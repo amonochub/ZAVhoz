@@ -2,14 +2,15 @@
 Модуль уведомлений для ZAVhoz.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional
-import os
 import logging
+import os
+from datetime import datetime, timedelta
+
 from aiogram import Bot
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
-from models import Request, Status, Priority
+
+from models import Priority, Request, Status
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,11 @@ class NotificationService:
         try:
             from utils.messages import format_request_info
             admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
-            
+
             if admin_id == 0:
                 logger.warning("ADMIN_USER_ID not configured")
                 return
-            
+
             logger.info(f"Sending notification to admin {admin_id} about request {request.id}")
             text = f"🆕 <b>Новая заявка!</b>\n\n{format_request_info(request)}"
             await self.bot.send_message(admin_id, text, parse_mode="HTML")
@@ -41,16 +42,16 @@ class NotificationService:
         """Уведомить пользователя об изменении статуса"""
         try:
             from utils.messages import format_request_info
-            
+
             status_messages = {
                 Status.IN_PROGRESS: "✅ Ваша заявка принята в работу!",
                 Status.COMPLETED: "🎉 Ваша заявка выполнена!",
                 Status.REJECTED: "❌ Ваша заявка отклонена."
             }
-            
+
             message = status_messages.get(new_status, f"📝 Статус заявки изменён на {new_status}")
             text = f"{message}\n\n{format_request_info(request)}"
-            
+
             await self.bot.send_message(request.user.telegram_id, text, parse_mode="HTML")
         except Exception as e:
             logger.error(f"Error notifying user: {e}")
@@ -59,12 +60,12 @@ class NotificationService:
         """Уведомить администратора о нарушении SLA"""
         try:
             admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
-            
+
             if admin_id == 0:
                 return
-            
+
             hours_elapsed = (datetime.utcnow() - request.created_at).total_seconds() / 3600
-            
+
             text = f"""⚠️ <b>SLA НАРУШЕНИЕ!</b>
 
 🎯 Заявка: {request.title}
@@ -74,7 +75,7 @@ class NotificationService:
 📊 Статус: {request.status.value}
 
 <i>Заявка требует срочного внимания!</i>"""
-            
+
             await self.bot.send_message(admin_id, text, parse_mode="HTML")
             logger.warning(f"SLA breach for request {request.id}")
         except Exception as e:
@@ -84,12 +85,12 @@ class NotificationService:
         """Уведомить администратора о застрявших высокоприоритетных заявках"""
         try:
             admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
-            
+
             if admin_id == 0:
                 return
-            
+
             two_days_ago = datetime.utcnow() - timedelta(days=2)
-            
+
             stmt = select(Request).where(
                 and_(
                     Request.priority == Priority.HIGH,
@@ -97,10 +98,10 @@ class NotificationService:
                     Request.created_at <= two_days_ago
                 )
             )
-            
+
             result = await session.execute(stmt)
             requests = result.scalars().all()
-            
+
             if requests:
                 text = f"""🚨 <b>КРИТИЧЕСКИЕ ЗАЯВКИ ПРОСРОЧЕНЫ!</b>
 
@@ -110,12 +111,12 @@ class NotificationService:
                 for req in requests[:5]:  # Показываем максимум 5
                     hours = (datetime.utcnow() - req.created_at).total_seconds() / 3600
                     text += f"  • {req.title} ({int(hours)}ч назад)\n"
-                
+
                 if len(requests) > 5:
                     text += f"\n... и ещё {len(requests) - 5} заявок\n"
-                
-                text += f"\n⚡ <b>Требуется срочная эскалация!</b>"
-                
+
+                text += "\n⚡ <b>Требуется срочная эскалация!</b>"
+
                 await self.bot.send_message(admin_id, text, parse_mode="HTML")
                 logger.warning(f"Found {len(requests)} overdue high-priority requests")
         except Exception as e:
@@ -126,20 +127,20 @@ class NotificationService:
         try:
             from utils.analytics import RequestAnalytics, format_analytics_report
             admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
-            
+
             if admin_id == 0:
                 return
-            
+
             report = await RequestAnalytics.get_full_report(session)
             text = format_analytics_report(report)
-            
+
             await self.bot.send_message(admin_id, text, parse_mode="HTML")
             logger.info("Daily digest sent to admin")
         except Exception as e:
             logger.error(f"Error sending daily digest: {e}")
 
 
-def get_notification_service(bot: Bot) -> Optional[NotificationService]:
+def get_notification_service(bot: Bot) -> NotificationService | None:
     """Получить сервис уведомлений"""
     try:
         return NotificationService(bot)

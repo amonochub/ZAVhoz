@@ -1,17 +1,22 @@
-from aiogram import types, F
-from sqlalchemy import select, func, and_
-from database.connection import get_db
-from models import Request, Status, Priority
-from utils.auth import require_auth
-from utils.keyboard import (
-    get_admin_panel_keyboard, get_filter_keyboard, get_request_actions_keyboard, 
-    get_back_keyboard, get_priority_filter_keyboard, get_status_filter_keyboard,
-    get_search_filter_keyboard
-)
-from utils.messages import format_request_list, format_request_info, get_stats_message
-from utils.export import export_requests_to_csv, get_requests_for_export
-from aiogram.types import FSInputFile
 from datetime import datetime, timedelta
+
+from aiogram import F, types
+from aiogram.types import FSInputFile
+from sqlalchemy import and_, func, select
+
+from models import Priority, Request, Status
+from utils.auth import require_auth
+from utils.export import export_requests_to_csv, get_requests_for_export
+from utils.keyboard import (
+    get_admin_panel_keyboard,
+    get_back_keyboard,
+    get_filter_keyboard,
+    get_priority_filter_keyboard,
+    get_search_filter_keyboard,
+    get_status_filter_keyboard,
+)
+from utils.messages import format_request_list, get_stats_message
+
 
 @require_auth
 async def admin_panel_callback(callback: types.CallbackQuery, user, session):
@@ -92,10 +97,7 @@ async def admin_archive_callback(callback: types.CallbackQuery, user, session):
     result = await session.execute(stmt)
     requests = result.scalars().all()
 
-    if not requests:
-        text = "📭 Архив пуст."
-    else:
-        text = format_request_list(requests, "Архив выполненных заявок")
+    text = "📭 Архив пуст." if not requests else format_request_list(requests, "Архив выполненных заявок")
 
     keyboard = get_back_keyboard("back_to_admin")
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
@@ -148,9 +150,9 @@ async def filter_priority_callback(callback: types.CallbackQuery, user, session)
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
+
     priority = callback.data.split("_")[-1]
-    
+
     if priority == "ALL":
         stmt = select(Request).where(Request.status.in_([Status.OPEN, Status.IN_PROGRESS])).order_by(Request.priority.desc(), Request.created_at.asc())
     else:
@@ -160,24 +162,24 @@ async def filter_priority_callback(callback: types.CallbackQuery, user, session)
                 Request.priority == Priority[priority]
             )
         ).order_by(Request.created_at.asc())
-    
+
     result = await session.execute(stmt)
     requests = result.scalars().all()
-    
+
     priority_text = {
         "HIGH": "🔴 ВЫСОКИЙ",
-        "MEDIUM": "🟡 СРЕДНИЙ", 
+        "MEDIUM": "🟡 СРЕДНИЙ",
         "LOW": "🟢 НИЗКИЙ",
         "ALL": "📋 ВСЕ"
     }
-    
+
     if not requests:
         text = f"📭 Заявок с приоритетом {priority_text.get(priority, priority)} нет."
         keyboard = get_back_keyboard("back_to_admin")
     else:
         text = format_request_list(requests, f"Заявки: {priority_text.get(priority, priority)} приоритет")
         keyboard = get_back_keyboard("back_to_admin")
-    
+
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
@@ -187,17 +189,17 @@ async def filter_status_callback(callback: types.CallbackQuery, user, session):
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
+
     status_name = callback.data.split("_")[-1]
-    
+
     if status_name == "ALL":
         stmt = select(Request).order_by(Request.created_at.desc())
     else:
         stmt = select(Request).where(Request.status == Status[status_name]).order_by(Request.created_at.desc())
-    
+
     result = await session.execute(stmt)
     requests = result.scalars().all()
-    
+
     status_text = {
         "OPEN": "📭 ОТКРЫТЫЕ",
         "IN_PROGRESS": "⚙️ В РАБОТЕ",
@@ -205,14 +207,14 @@ async def filter_status_callback(callback: types.CallbackQuery, user, session):
         "REJECTED": "❌ ОТКЛОНЕНО",
         "ALL": "📋 ВСЕ"
     }
-    
+
     if not requests:
         text = f"📭 Заявок со статусом {status_text.get(status_name, status_name)} нет."
         keyboard = get_back_keyboard("back_to_admin")
     else:
         text = format_request_list(requests, f"Заявки: {status_text.get(status_name, status_name)}")
         keyboard = get_back_keyboard("back_to_admin")
-    
+
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
@@ -222,7 +224,7 @@ async def show_advanced_search_callback(callback: types.CallbackQuery, user, ses
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
+
     keyboard = get_search_filter_keyboard()
     await callback.message.edit_text(
         "🔍 <b>Расширенный поиск</b>\n\nВыберите критерий:",
@@ -237,20 +239,20 @@ async def search_by_date_callback(callback: types.CallbackQuery, user, session):
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
+
     seven_days_ago = datetime.now() - timedelta(days=7)
-    
+
     stmt = select(Request).where(Request.created_at >= seven_days_ago).order_by(Request.created_at.desc())
     result = await session.execute(stmt)
     requests = result.scalars().all()
-    
+
     if not requests:
         text = "📭 Заявок за последние 7 дней нет."
         keyboard = get_back_keyboard("back_to_admin")
     else:
         text = format_request_list(requests, f"Заявки за последние 7 дней ({len(requests)} шт.)")
         keyboard = get_back_keyboard("back_to_admin")
-    
+
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
@@ -260,18 +262,18 @@ async def admin_advanced_analytics_callback(callback: types.CallbackQuery, user,
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
+
     try:
         from utils.analytics import RequestAnalytics, format_analytics_report
-        
+
         report = await RequestAnalytics.get_full_report(session)
         text = format_analytics_report(report)
-        
+
         keyboard = get_back_keyboard("back_to_admin")
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     except Exception as e:
         await callback.answer(f"❌ Ошибка загрузки аналитики: {str(e)}", show_alert=True)
-    
+
     await callback.answer()
 
 @require_auth
@@ -280,8 +282,7 @@ async def admin_priority_filter_callback(callback: types.CallbackQuery, user, se
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
-    from utils.keyboard import get_priority_filter_keyboard
+
     keyboard = get_priority_filter_keyboard()
     await callback.message.edit_text(
         "🎯 <b>Фильтр по приоритету</b>\n\nВыберите приоритет:",
@@ -296,8 +297,7 @@ async def admin_status_filter_callback(callback: types.CallbackQuery, user, sess
     if user.role != "admin":
         await callback.answer("У вас нет доступа")
         return
-    
-    from utils.keyboard import get_status_filter_keyboard
+
     keyboard = get_status_filter_keyboard()
     await callback.message.edit_text(
         "📊 <b>Фильтр по статусу</b>\n\nВыберите статус:",
@@ -317,7 +317,7 @@ def register_admin_handlers(dp):
     dp.callback_query.register(admin_advanced_analytics_callback, F.data == "admin_advanced_analytics")
     dp.callback_query.register(admin_priority_filter_callback, F.data == "admin_priority_filter")
     dp.callback_query.register(admin_status_filter_callback, F.data == "admin_status_filter")
-    
+
     # Регистрируем обработчики фильтров
     register_admin_filters_handlers(dp)
 

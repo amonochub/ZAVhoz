@@ -1,11 +1,11 @@
 import logging
 import os
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 load_dotenv()
