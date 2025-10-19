@@ -32,7 +32,7 @@ def format_request_info(request: Request, show_user: bool = False) -> str:
         message += f"👤 <b>Пользователь:</b> {request.user.first_name or ''} {request.user.last_name or ''} (@{request.user.username or 'N/A'})\n"
 
     if request.assigned_to:
-        message += f"👷 <b>Исполнитель:</b> {request.assignee.first_name or ''} {request.assignee.last_name or ''}\n"
+        message += f"👷 <b>Исполнитель:</b> {request.assigned_user.first_name or ''} {request.assigned_user.last_name or ''}\n"
 
     if request.completed_at:
         message += f"✅ <b>Выполнена:</b> {request.completed_at.strftime('%d.%m.%Y %H:%M')}\n"

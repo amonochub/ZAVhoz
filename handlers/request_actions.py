@@ -35,6 +35,26 @@ async def view_request_callback(callback: types.CallbackQuery, user, session):
     keyboard = get_request_actions_keyboard(request.id, user.role == "admin")
 
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+    
+    # Отправляем фото если они есть
+    file_stmt = select(File).where(File.request_id == request_id)
+    file_result = await session.execute(file_stmt)
+    files = file_result.scalars().all()
+    
+    if files:
+        from bot.main import bot
+        for file in files:
+            if file.file_type == "photo":
+                try:
+                    await bot.send_photo(
+                        callback.message.chat.id,
+                        photo=file.file_id,
+                        caption=f"📸 Фото заявки #{request.id}"
+                    )
+                except Exception as e:
+                    import logging
+                    logging.error(f"Error sending photo: {e}")
+    
     await callback.answer()
 
 @require_auth
