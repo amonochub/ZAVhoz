@@ -4,11 +4,12 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
+import os
+import logging
 from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from models import Request, Status, Priority
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -23,16 +24,18 @@ class NotificationService:
         """Уведомить администратора о новой заявке"""
         try:
             from utils.messages import format_request_info
-            admin_id = int(__import__('os').getenv('ADMIN_USER_ID', '0'))
+            admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
             
             if admin_id == 0:
                 logger.warning("ADMIN_USER_ID not configured")
                 return
             
+            logger.info(f"Sending notification to admin {admin_id} about request {request.id}")
             text = f"🆕 <b>Новая заявка!</b>\n\n{format_request_info(request)}"
             await self.bot.send_message(admin_id, text, parse_mode="HTML")
+            logger.info(f"✅ Notification sent to admin {admin_id}")
         except Exception as e:
-            logger.error(f"Error notifying admin: {e}")
+            logger.error(f"Error notifying admin: {e}", exc_info=True)
 
     async def notify_user_status_changed(self, request, new_status: str) -> None:
         """Уведомить пользователя об изменении статуса"""
@@ -55,7 +58,7 @@ class NotificationService:
     async def notify_sla_breach(self, request, sla_hours: int = 24) -> None:
         """Уведомить администратора о нарушении SLA"""
         try:
-            admin_id = int(__import__('os').getenv('ADMIN_USER_ID', '0'))
+            admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
             
             if admin_id == 0:
                 return
@@ -75,12 +78,12 @@ class NotificationService:
             await self.bot.send_message(admin_id, text, parse_mode="HTML")
             logger.warning(f"SLA breach for request {request.id}")
         except Exception as e:
-            logger.error(f"Error sending SLA breach notification: {e}")
+            logger.error(f"Error sending SLA breach notification: {e}", exc_info=True)
 
     async def notify_high_priority_pending(self, session: AsyncSession) -> None:
         """Уведомить администратора о застрявших высокоприоритетных заявках"""
         try:
-            admin_id = int(__import__('os').getenv('ADMIN_USER_ID', '0'))
+            admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
             
             if admin_id == 0:
                 return
@@ -122,7 +125,7 @@ class NotificationService:
         """Отправить дневной дайджест администратору"""
         try:
             from utils.analytics import RequestAnalytics, format_analytics_report
-            admin_id = int(__import__('os').getenv('ADMIN_USER_ID', '0'))
+            admin_id = int(os.getenv('ADMIN_USER_ID', '0'))
             
             if admin_id == 0:
                 return

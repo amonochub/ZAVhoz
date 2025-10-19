@@ -123,9 +123,17 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
     # Отправляем уведомление администратору
     from utils.notifications import get_notification_service
     from bot.main import bot
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"Request created: ID={request.id}, user_id={user.id}")
     notification_service = get_notification_service(bot)
     if notification_service:
+        logger.info(f"Sending notification to admin about request {request.id}")
         await notification_service.notify_admin_new_request(request)
+        logger.info(f"Notification sent successfully")
+    else:
+        logger.error("Notification service not available")
 
     # Очищаем состояние
     await state.clear()
