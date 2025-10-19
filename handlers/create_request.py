@@ -108,7 +108,7 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
             user_id=user.id,
             title=data['description'][:100],  # Первые 100 символов как название
             description=data['description'],
-            location="Не указано",  # Локация опциональна
+            location=data.get('location', 'Не указано'),  # Используем сохранённую локацию или дефолт
             priority=priority
         )
         session.add(request)
@@ -173,26 +173,78 @@ async def cancel_create_callback(callback: types.CallbackQuery, state: FSMContex
 @require_auth
 async def add_location_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Пользователь хочет добавить локацию"""
-    await state.set_state(CreateRequestStates.waiting_for_additional)
+    await state.update_data(add_location=True, add_comment=False)
     await callback.message.edit_text(
-        "📍 Укажите местоположение (кабинет, этаж, здание, коридор и т.д.):",
-        reply_markup=get_back_keyboard("cancel_create")
+        "📍 Укажите местоположение (кабинет, этаж, здание, коридор и т.д.):"
     )
     await callback.answer()
 
 @require_auth
 async def add_comment_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Пользователь хочет добавить комментарий"""
-    await state.set_state(CreateRequestStates.waiting_for_additional)
+    await state.update_data(add_location=False, add_comment=True)
     await callback.message.edit_text(
-        "💬 Добавьте комментарий (максимум 500 символов):",
-        reply_markup=get_back_keyboard("cancel_create")
+        "💬 Добавьте комментарий (максимум 500 символов):"
     )
     await callback.answer()
 
 @require_auth
+async def location_or_comment_received(message: types.Message, state: FSMContext, user, session):
+    """Получена локация или комментарий"""
+    data = await state.get_data()
+    
+    if data.get('add_location'):
+        # Пользователь указывает локацию
+        location = message.text.strip()
+        if not location or len(location) < 2:
+            await message.reply("❌ Локация слишком короткая. Минимум 2 символа.\n\n💡 Попробуйте заново:")
+            return
+        
+        if len(location) > 100:
+            await message.reply("❌ Локация слишком длинная. Максимум 100 символов.\n\n💡 Попробуйте заново:")
+            return
+        
+        await state.update_data(location=location)
+        await message.reply("✅ Локация сохранена!")
+        
+    elif data.get('add_comment'):
+        # Пользователь добавляет комментарий
+        comment = message.text.strip()
+        if not comment or len(comment) < 2:
+            await message.reply("❌ Комментарий слишком короткий. Минимум 2 символа.\n\n💡 Попробуйте заново:")
+            return
+        
+        if len(comment) > 500:
+            await message.reply("❌ Комментарий слишком длинный. Максимум 500 символов.\n\n💡 Попробуйте заново:")
+            return
+        
+        await state.update_data(comment=comment)
+        await message.reply("✅ Комментарий сохранён!")
+    
+    # Показываем меню что дальше
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="📍 Указать локацию", callback_data="add_location")],
+        [types.InlineKeyboardButton(text="💬 Добавить комментарий", callback_data="add_comment")],
+        [types.InlineKeyboardButton(text="✅ Готово, выбрать приоритет", callback_data="go_priority")],
+        [types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_create")]
+    ])
+    
+    await message.reply(
+        "📝 Что дальше?",
+        reply_markup=keyboard
+    )
+    
+    await state.update_data(add_location=False, add_comment=False)
+
+@require_auth
 async def go_priority_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Перейти к выбору приоритета"""
+    data = await state.get_data()
+    
+    # Обновляем локацию если её нет
+    if 'location' not in data:
+        await state.update_data(location="Не указано")
+    
     await state.set_state(CreateRequestStates.waiting_for_priority)
     keyboard = get_priority_keyboard()
     await callback.message.edit_text(
@@ -214,4 +266,5 @@ def register_create_request_handlers(dp):
     dp.callback_query.register(cancel_create_callback, F.data == "cancel_create")
     dp.callback_query.register(add_location_callback, F.data == "add_location")
     dp.callback_query.register(add_comment_callback, F.data == "add_comment")
+    dp.message.register(location_or_comment_received, CreateRequestStates.waiting_for_additional)
     dp.callback_query.register(go_priority_callback, F.data == "go_priority")
