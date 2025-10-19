@@ -68,6 +68,7 @@ def require_auth(func: T) -> T:
     """Decorator to require user authentication.
     
     Automatically gets or creates user and passes it to handler.
+    Works with both Message and CallbackQuery.
     
     Args:
         func: Handler function to decorate
@@ -76,19 +77,33 @@ def require_auth(func: T) -> T:
         Decorated function
     """
     @wraps(func)
-    async def wrapper(message: types.Message, *args: Any, **kwargs: Any) -> Any:
+    async def wrapper(update: Any, *args: Any, **kwargs: Any) -> Any:
+        # Handle both Message and CallbackQuery
+        if isinstance(update, types.CallbackQuery):
+            message = update.message
+            from_user = update.from_user
+        else:  # types.Message
+            message = update
+            from_user = update.from_user
+        
         async for session in get_db():
             try:
                 user = await get_or_create_user(message, session)
                 
                 if not user.is_active:
-                    await message.reply("Your account has been disabled.")
+                    if isinstance(update, types.CallbackQuery):
+                        await update.answer("Your account has been disabled.", show_alert=True)
+                    else:
+                        await message.reply("Your account has been disabled.")
                     return
                 
-                return await func(message, user=user, session=session, *args, **kwargs)
+                return await func(update, user=user, session=session, *args, **kwargs)
             except Exception as e:
-                logger.error(f"Auth error for user {message.from_user.id}: {e}")
-                await message.reply("An error occurred. Please try again later.")
+                logger.error(f"Auth error for user {from_user.id}: {e}", exc_info=True)
+                if isinstance(update, types.CallbackQuery):
+                    await update.answer("An error occurred. Please try again later.", show_alert=True)
+                else:
+                    await message.reply("An error occurred. Please try again later.")
                 raise
     
     return wrapper  # type: ignore
