@@ -78,33 +78,44 @@ def require_auth(func: T) -> T:
     """
     @wraps(func)
     async def wrapper(update: Any, *args: Any, **kwargs: Any) -> Any:
-        # Handle both Message and CallbackQuery
-        if isinstance(update, types.CallbackQuery):
-            message = update.message
-            from_user = update.from_user
-        else:  # types.Message
-            message = update
-            from_user = update.from_user
-        
-        async for session in get_db():
-            try:
-                user = await get_or_create_user(message, session)
-                
-                if not user.is_active:
-                    if isinstance(update, types.CallbackQuery):
-                        await update.answer("Your account has been disabled.", show_alert=True)
-                    else:
-                        await message.reply("Your account has been disabled.")
-                    return
-                
-                return await func(update, user=user, session=session, *args, **kwargs)
-            except Exception as e:
-                logger.error(f"Auth error for user {from_user.id}: {e}", exc_info=True)
-                if isinstance(update, types.CallbackQuery):
-                    await update.answer("An error occurred. Please try again later.", show_alert=True)
-                else:
-                    await message.reply("An error occurred. Please try again later.")
-                raise
+        try:
+            # Extract message and from_user based on update type
+            if isinstance(update, types.CallbackQuery):
+                message = update.message
+                from_user = update.from_user
+            else:  # types.Message
+                message = update
+                from_user = update.from_user
+            
+            # Get database session
+            async for session in get_db():
+                try:
+                    # Get or create user
+                    user = await get_or_create_user(message, session)
+                    
+                    if not user.is_active:
+                        if isinstance(update, types.CallbackQuery):
+                            await update.answer("Your account has been disabled.", show_alert=True)
+                        else:
+                            await message.reply("Your account has been disabled.")
+                        return
+                    
+                    # Call handler with proper arguments
+                    return await func(update, *args, user=user, session=session, **kwargs)
+                except Exception as e:
+                    logger.error(f"Auth error for user {from_user.id}: {e}", exc_info=True)
+                    # Notify user of error appropriately
+                    try:
+                        if isinstance(update, types.CallbackQuery):
+                            await update.answer("An error occurred. Please try again later.", show_alert=True)
+                        else:
+                            await message.reply("An error occurred. Please try again later.")
+                    except:
+                        pass  # Silently ignore notification errors
+                    raise
+        except Exception as e:
+            logger.error(f"Unexpected error in require_auth: {e}", exc_info=True)
+            raise
     
     return wrapper  # type: ignore
 

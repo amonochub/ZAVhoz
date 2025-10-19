@@ -20,8 +20,9 @@ def get_yes_no_keyboard():
     ])
 
 @require_auth
-async def description_received(message: types.Message, state: FSMContext, user, session):
+async def description_received(update: types.Message, state: FSMContext, user, session):
     """Получено описание (фото или текст)"""
+    message = update  # update is the Message object for message handlers
     # Проверка rate limit
     if not rate_limiter.is_allowed(message.from_user.id, "create_request", max_requests=5, time_window=300):
         await message.reply("⏱️ Слишком много запросов. Попробуйте позже.")
@@ -189,8 +190,9 @@ async def add_comment_callback(callback: types.CallbackQuery, state: FSMContext,
     await callback.answer()
 
 @require_auth
-async def location_or_comment_received(message: types.Message, state: FSMContext, user, session):
+async def location_or_comment_received(update: types.Message, state: FSMContext, user, session):
     """Получена локация или комментарий"""
+    message = update  # update is the Message object for message handlers
     data = await state.get_data()
     
     if data.get('add_location'):
