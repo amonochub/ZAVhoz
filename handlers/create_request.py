@@ -92,57 +92,71 @@ async def additional_no_callback(callback: types.CallbackQuery, state: FSMContex
 @require_auth
 async def priority_selected(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Выбран приоритет - создаём заявку"""
-    priority_value = callback.data.replace("priority_", "")
-    priority = Priority(priority_value)
-
-    data = await state.get_data()
-    
-    # Создаём заявку
-    request = Request(
-        user_id=user.id,
-        title=data['description'][:100],  # Первые 100 символов как название
-        description=data['description'],
-        location="Не указано",  # Локация опциональна
-        priority=priority
-    )
-    session.add(request)
-    await session.commit()
-    await session.refresh(request)
-
-    # Если есть фото - прикрепляем файл
-    if data.get('file_id'):
-        file = File(
-            request_id=request.id,
-            file_id=data['file_id'],
-            file_type="photo",
-            uploaded_by=user.id
-        )
-        session.add(file)
-        await session.commit()
-
-    # Отправляем уведомление администратору
-    from utils.notifications import get_notification_service
-    from bot.main import bot
     import logging
     logger = logging.getLogger(__name__)
     
-    logger.info(f"Request created: ID={request.id}, user_id={user.id}")
-    notification_service = get_notification_service(bot)
-    if notification_service:
-        logger.info(f"Sending notification to admin about request {request.id}")
-        await notification_service.notify_admin_new_request(request)
-        logger.info(f"Notification sent successfully")
-    else:
-        logger.error("Notification service not available")
+    try:
+        priority_value = callback.data.replace("priority_", "")
+        logger.info(f"Priority selected: {priority_value}")
+        priority = Priority(priority_value)
 
-    # Очищаем состояние
-    await state.clear()
+        data = await state.get_data()
+        logger.info(f"State data: {data}")
+        
+        # Создаём заявку
+        request = Request(
+            user_id=user.id,
+            title=data['description'][:100],  # Первые 100 символов как название
+            description=data['description'],
+            location="Не указано",  # Локация опциональна
+            priority=priority
+        )
+        session.add(request)
+        await session.commit()
+        await session.refresh(request)
+        logger.info(f"Request created: ID={request.id}, user_id={user.id}")
 
-    text = f"✅ <b>Заявка создана успешно!</b>\n\n{format_request_info(request)}"
-    keyboard = get_main_menu_keyboard(user.role == "admin")
+        # Если есть фото - прикрепляем файл
+        if data.get('file_id'):
+            file = File(
+                request_id=request.id,
+                file_id=data['file_id'],
+                file_type="photo",
+                uploaded_by=user.id
+            )
+            session.add(file)
+            await session.commit()
+            logger.info(f"File attached to request {request.id}")
 
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    await callback.answer()
+        # Отправляем уведомление администратору
+        from utils.notifications import get_notification_service
+        from bot.main import bot
+        
+        notification_service = get_notification_service(bot)
+        if notification_service:
+            logger.info(f"Sending notification to admin about request {request.id}")
+            await notification_service.notify_admin_new_request(request)
+            logger.info(f"✅ Notification sent successfully")
+        else:
+            logger.error("Notification service not available")
+
+        # Очищаем состояние
+        await state.clear()
+
+        text = f"✅ <b>Заявка создана успешно!</b>\n\n{format_request_info(request)}"
+        keyboard = get_main_menu_keyboard(user.role == "admin")
+
+        await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+        await callback.answer()
+        logger.info(f"User notified about successful request creation")
+        
+    except Exception as e:
+        logger.error(f"Error creating request: {e}", exc_info=True)
+        await callback.message.edit_text(
+            f"❌ Ошибка при создании заявки:\n\n{str(e)}",
+            reply_markup=get_back_keyboard("back_to_main")
+        )
+        await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
 
 @require_auth
 async def cancel_create_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
