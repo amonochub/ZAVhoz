@@ -31,7 +31,7 @@ def format_request_info(request: Request, show_user: bool = False) -> str:
     if show_user:
         message += f"👤 <b>Пользователь:</b> {request.user.first_name or ''} {request.user.last_name or ''} (@{request.user.username or 'N/A'})\n"
 
-    if request.assigned_to:
+    if request.assigned_to and request.assigned_user:
         message += f"👷 <b>Исполнитель:</b> {request.assigned_user.first_name or ''} {request.assigned_user.last_name or ''}\n"
 
     if request.completed_at:
