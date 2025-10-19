@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: zavhoz_user
+          POSTGRES_PASSWORD: testpass123
+          POSTGRES_DB: zavhoz_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: |
+          ruff check .
+
+      - name: Format check with black
+        run: |
+          black --check .
+
+      - name: Import sort check with isort
+        run: |
+          isort --check-only .
+
+      - name: Type check with mypy
+        run: |
+          mypy . --strict
+
+      - name: Security check with bandit
+        run: |
+          bandit -r . -ll
+
+      - name: Dependency security check
+        run: |
+          safety check --json
+
+      - name: Run tests with pytest
+        env:
+          DATABASE_URL: postgresql://zavhoz_user:testpass123@localhost:5432/zavhoz_test_db
+          BOT_TOKEN: test_token_ci
+          ADMIN_USER_ID: 123456789
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+
+      - name: Upload coverage reports
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false

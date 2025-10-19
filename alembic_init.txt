@@ -1,0 +1,8 @@
+# Alembic setup commands:
+# 1. Install alembic: pip install alembic
+# 2. Initialize: alembic init alembic
+# 3. Configure alembic.ini with DATABASE_URL
+# 4. Create migrations: alembic revision --autogenerate -m "Initial schema"
+# 5. Apply: alembic upgrade head
+
+# For now, we'll create a manual migration structure
