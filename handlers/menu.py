@@ -9,11 +9,9 @@ from utils.keyboard import get_main_menu_keyboard, get_priority_keyboard, get_re
 from utils.messages import format_request_list, format_request_info
 
 class CreateRequestStates(StatesGroup):
-    waiting_for_title = State()
-    waiting_for_description = State()
-    waiting_for_location = State()
-    waiting_for_priority = State()
-    waiting_for_files = State()
+    waiting_for_description = State()  # Фото/текст описание
+    waiting_for_additional = State()   # Хотите дополнить?
+    waiting_for_priority = State()     # Выбор приоритета
 
 @require_auth
 async def main_menu_callback(callback: types.CallbackQuery, user, session):
@@ -30,9 +28,13 @@ async def main_menu_callback(callback: types.CallbackQuery, user, session):
 @require_auth
 async def create_request_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
     """Создание заявки - начало"""
-    await state.set_state(CreateRequestStates.waiting_for_title)
+    await state.set_state(CreateRequestStates.waiting_for_description)
     await callback.message.edit_text(
-        "📝 <b>Создание заявки</b>\n\nВведите название проблемы:",
+        "📸 <b>Создание заявки</b>\n\n"
+        "Опишите проблему:\n"
+        "• Отправьте фото с подписью\n"
+        "• Или просто напишите текст\n\n"
+        "Например: 'Трещина в окне, кабинет 101'",
         reply_markup=get_back_keyboard("back_to_main"),
         parse_mode="HTML"
     )
