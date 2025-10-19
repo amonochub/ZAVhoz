@@ -18,13 +18,13 @@ def validate_request_title(title: str) -> Tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     if not title or not title.strip():
-        return False, "Request title cannot be empty"
+        return False, "🏷️ Название заявки не может быть пустым. Введите название проблемы, например: 'Нет туалетной бумаги'"
 
     if len(title.strip()) < 3:
-        return False, "Request title must contain at least 3 characters"
+        return False, "🏷️ Название слишком короткое. Минимум 3 символа"
 
     if len(title.strip()) > 100:
-        return False, "Request title must not exceed 100 characters"
+        return False, "🏷️ Название слишком длинное. Максимум 100 символов"
 
     return True, ""
 
@@ -39,13 +39,13 @@ def validate_request_description(description: str) -> Tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     if not description or not description.strip():
-        return False, "Request description cannot be empty"
+        return False, "📝 Описание не может быть пустым. Опишите проблему подробнее, минимум 10 символов"
 
     if len(description.strip()) < 10:
-        return False, "Request description must contain at least 10 characters"
+        return False, "📝 Описание слишком короткое. Минимум 10 символов"
 
     if len(description.strip()) > 1000:
-        return False, "Request description must not exceed 1000 characters"
+        return False, "📝 Описание слишком длинное. Максимум 1000 символов"
 
     return True, ""
 
@@ -60,13 +60,13 @@ def validate_location(location: str) -> Tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     if not location or not location.strip():
-        return False, "Location cannot be empty"
+        return False, "📍 Местоположение не может быть пустым. Укажите кабинет или этаж, например: 'Кабинет 101'"
 
     if len(location.strip()) < 3:
-        return False, "Location must contain at least 3 characters"
+        return False, "📍 Местоположение слишком короткое. Минимум 3 символа"
 
     if len(location.strip()) > 100:
-        return False, "Location must not exceed 100 characters"
+        return False, "📍 Местоположение слишком длинное. Максимум 100 символов"
 
     return True, ""
 
@@ -81,10 +81,10 @@ def validate_comment(comment: str) -> Tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     if not comment or not comment.strip():
-        return False, "Comment cannot be empty"
+        return False, "💬 Комментарий не может быть пустым"
 
     if len(comment.strip()) > 500:
-        return False, "Comment must not exceed 500 characters"
+        return False, "💬 Комментарий слишком длинный. Максимум 500 символов"
 
     return True, ""
 

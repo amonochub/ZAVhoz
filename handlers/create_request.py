@@ -20,7 +20,7 @@ async def title_received(message: types.Message, state: FSMContext, user, sessio
     # Валидация
     is_valid, error_msg = validate_request_title(message.text)
     if not is_valid:
-        await message.reply(f"❌ {error_msg}")
+        await message.reply(f"❌ {error_msg}\n\n💡 Попробуйте заново:")
         return
 
     await state.update_data(title=message.text.strip())
@@ -36,7 +36,7 @@ async def description_received(message: types.Message, state: FSMContext, user, 
     # Валидация
     is_valid, error_msg = validate_request_description(message.text)
     if not is_valid:
-        await message.reply(f"❌ {error_msg}")
+        await message.reply(f"❌ {error_msg}\n\n💡 Попробуйте заново:")
         return
 
     await state.update_data(description=message.text.strip())
@@ -52,7 +52,7 @@ async def location_received(message: types.Message, state: FSMContext, user, ses
     # Валидация
     is_valid, error_msg = validate_location(message.text)
     if not is_valid:
-        await message.reply(f"❌ {error_msg}")
+        await message.reply(f"❌ {error_msg}\n\n💡 Попробуйте заново:")
         return
 
     await state.update_data(location=message.text.strip())
