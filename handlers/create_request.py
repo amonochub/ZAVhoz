@@ -170,6 +170,41 @@ async def cancel_create_callback(callback: types.CallbackQuery, state: FSMContex
     )
     await callback.answer()
 
+@require_auth
+async def add_location_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
+    """Пользователь хочет добавить локацию"""
+    await state.set_state(CreateRequestStates.waiting_for_additional)
+    await callback.message.edit_text(
+        "📍 Укажите местоположение (кабинет, этаж, здание, коридор и т.д.):",
+        reply_markup=get_back_keyboard("cancel_create")
+    )
+    await callback.answer()
+
+@require_auth
+async def add_comment_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
+    """Пользователь хочет добавить комментарий"""
+    await state.set_state(CreateRequestStates.waiting_for_additional)
+    await callback.message.edit_text(
+        "💬 Добавьте комментарий (максимум 500 символов):",
+        reply_markup=get_back_keyboard("cancel_create")
+    )
+    await callback.answer()
+
+@require_auth
+async def go_priority_callback(callback: types.CallbackQuery, state: FSMContext, user, session):
+    """Перейти к выбору приоритета"""
+    await state.set_state(CreateRequestStates.waiting_for_priority)
+    keyboard = get_priority_keyboard()
+    await callback.message.edit_text(
+        "🔴 <b>Выберите приоритет заявки:</b>\n\n"
+        "🔴 Высокий - срочно\n"
+        "🟡 Средний - в течение дня\n"
+        "🟢 Низкий - когда будет время",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
 def register_create_request_handlers(dp):
     """Регистрация обработчиков создания заявки"""
     dp.message.register(description_received, CreateRequestStates.waiting_for_description)
@@ -177,3 +212,6 @@ def register_create_request_handlers(dp):
     dp.callback_query.register(additional_no_callback, F.data == "additional_no")
     dp.callback_query.register(priority_selected, F.data.startswith("priority_"))
     dp.callback_query.register(cancel_create_callback, F.data == "cancel_create")
+    dp.callback_query.register(add_location_callback, F.data == "add_location")
+    dp.callback_query.register(add_comment_callback, F.data == "add_comment")
+    dp.callback_query.register(go_priority_callback, F.data == "go_priority")
