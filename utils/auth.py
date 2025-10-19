@@ -111,8 +111,8 @@ def require_auth(func: T) -> T:
                             await update.answer("An error occurred. Please try again later.", show_alert=True)
                         else:
                             await message.reply("An error occurred. Please try again later.")
-                    except:
-                        pass  # Silently ignore notification errors
+                    except Exception as notify_error:
+                        logger.error(f"Failed to send error notification: {notify_error}", exc_info=True)
                     raise
         except Exception as e:
             logger.error(f"Unexpected error in require_auth: {e}", exc_info=True)

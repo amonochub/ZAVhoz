@@ -2,29 +2,31 @@
 from models import Priority, Request, Status
 
 
+# Shared emoji mappings
+STATUS_EMOJIS = {
+    Status.OPEN: "🟢",
+    Status.IN_PROGRESS: "🟡",
+    Status.COMPLETED: "✅",
+    Status.REJECTED: "❌"
+}
+
+PRIORITY_EMOJIS = {
+    Priority.LOW: "🟢",
+    Priority.MEDIUM: "🟡",
+    Priority.HIGH: "🔴"
+}
+
+
 def format_request_info(request: Request, show_user: bool = False) -> str:
     """Форматирование информации о заявке"""
-    status_emojis = {
-        Status.OPEN: "🟢",
-        Status.IN_PROGRESS: "🟡",
-        Status.COMPLETED: "✅",
-        Status.REJECTED: "❌"
-    }
-
-    priority_emojis = {
-        Priority.LOW: "🟢",
-        Priority.MEDIUM: "🟡",
-        Priority.HIGH: "🔴"
-    }
-
     message = f"""
 📋 <b>Заявка #{request.id}</b>
 
 🏷️ <b>Название:</b> {request.title}
 📝 <b>Описание:</b> {request.description}
 🏢 <b>Местоположение:</b> {request.location}
-{priority_emojis[request.priority]} <b>Приоритет:</b> {request.priority.value}
-{status_emojis[request.status]} <b>Статус:</b> {request.status.value}
+{PRIORITY_EMOJIS[request.priority]} <b>Приоритет:</b> {request.priority.value}
+{STATUS_EMOJIS[request.status]} <b>Статус:</b> {request.status.value}
 
 📅 <b>Создана:</b> {request.created_at.strftime('%d.%m.%Y %H:%M')}
 """
@@ -48,18 +50,8 @@ def format_request_list(requests: list[Request], title: str = "Заявки") ->
     message = f"📋 <b>{title}</b> ({len(requests)}):\n\n"
 
     for i, request in enumerate(requests, 1):
-        status_emoji = {
-            Status.OPEN: "🟢",
-            Status.IN_PROGRESS: "🟡",
-            Status.COMPLETED: "✅",
-            Status.REJECTED: "❌"
-        }[request.status]
-
-        priority_emoji = {
-            Priority.LOW: "🟢",
-            Priority.MEDIUM: "🟡",
-            Priority.HIGH: "🔴"
-        }[request.priority]
+        status_emoji = STATUS_EMOJIS[request.status]
+        priority_emoji = PRIORITY_EMOJIS[request.priority]
 
         message += f"{i}. {status_emoji}{priority_emoji} #{request.id} - {request.title[:30]}{'...' if len(request.title) > 30 else ''}\n"
         message += f"   📅 {request.created_at.strftime('%d.%m.%Y')} | 🏢 {request.location}\n\n"
