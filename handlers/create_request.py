@@ -312,7 +312,8 @@ async def go_priority_callback(callback: types.CallbackQuery, state: FSMContext,
 def register_create_request_handlers(dp):
     """Регистрация обработчиков создания заявки"""
     # Описание получаемое в состоянии ожидания описания
-    dp.message.register(description_received, CreateRequestStates.waiting_for_description)
+    # Обрабатываем фото, документы и текст
+    dp.message.register(description_received, CreateRequestStates.waiting_for_description, F.photo | F.document | F.text)
     
     # Callback обработчики
     dp.callback_query.register(additional_yes_callback, F.data == "additional_yes")
