@@ -130,7 +130,6 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
                 reply_markup=get_back_keyboard("back_to_main"),
                 parse_mode="HTML"
             )
-            await state.clear()
             await callback.answer("Ошибка валидации", show_alert=True)
             return
 
@@ -191,9 +190,6 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
         else:
             logger.error("Notification service not available")
 
-        # Очищаем состояние
-        await state.clear()
-
         text = f"✅ <b>Заявка создана успешно!</b>\n\n{format_request_info(request)}"
         keyboard = get_main_menu_keyboard(user.role == "admin")
 
@@ -203,11 +199,20 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
 
     except Exception as e:
         logger.error(f"Error creating request: {e}", exc_info=True)
-        await callback.message.edit_text(
-            f"❌ Ошибка при создании заявки:\n\n{str(e)}",
-            reply_markup=get_back_keyboard("back_to_main")
-        )
-        await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
+        try:
+            await callback.message.edit_text(
+                f"❌ Ошибка при создании заявки:\n\n{str(e)}",
+                reply_markup=get_back_keyboard("back_to_main")
+            )
+            await callback.answer(f"Ошибка: {str(e)}", show_alert=True)
+        except Exception as err:
+            logger.error(f"Error sending error message: {err}", exc_info=True)
+    finally:
+        # ✅ ГАРАНТИРОВАННАЯ очистка состояния
+        try:
+            await state.clear()
+        except Exception as e:
+            logger.error(f"Error clearing state: {e}", exc_info=True)
 
 @require_auth
 async def cancel_create_callback(callback: types.CallbackQuery, state: FSMContext, user, session):

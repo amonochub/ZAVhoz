@@ -26,6 +26,10 @@ engine = create_async_engine(
     poolclass=NullPool,
     echo=False,  # Disable query logging for security
     future=True,
+    connect_args={
+        "timeout": 10,  # Connection timeout: 10 seconds
+        "command_timeout": 30,  # Command timeout: 30 seconds
+    }
 )
 
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
