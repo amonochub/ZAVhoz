@@ -119,11 +119,25 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
         data = await state.get_data()
         logger.info(f"State data: {data}")
 
+        # Валидируем описание
+        description = data.get('description', '').strip()
+        if not description:
+            await callback.message.edit_text(
+                "❌ Ошибка: Описание заявки не может быть пустым",
+                reply_markup=get_back_keyboard("back_to_main")
+            )
+            await callback.answer("Ошибка валидации", show_alert=True)
+            return
+
         # Создаём заявку
+        title = description[:100] if description else "Заявка без названия"
+        if not title or not title.strip():
+            title = "Заявка"  # Fallback если что-то пошло не так
+            
         request = Request(
             user_id=user.id,
-            title=data['description'][:100],  # Первые 100 символов как название
-            description=data['description'],
+            title=title.strip(),  # Удаляем пробелы
+            description=description,
             location=data.get('location', 'Не указано'),  # Используем сохранённую локацию или дефолт
             priority=priority
         )
