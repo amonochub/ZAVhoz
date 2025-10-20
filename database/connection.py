@@ -20,16 +20,27 @@ if DATABASE_URL.startswith("postgresql://"):
 elif DATABASE_URL.startswith("sqlite://"):
     DATABASE_URL = DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
+# Configure timeouts based on database type
+connect_args = {}
+if "postgresql" in DATABASE_URL:
+    # PostgreSQL supports both timeout and command_timeout
+    connect_args = {
+        "timeout": 10,  # Connection timeout: 10 seconds
+        "command_timeout": 30,  # Command timeout: 30 seconds
+    }
+else:
+    # SQLite only supports timeout
+    connect_args = {
+        "timeout": 10,  # Connection timeout: 10 seconds
+    }
+
 # Create async engine with proper configuration
 engine = create_async_engine(
     DATABASE_URL,
     poolclass=NullPool,
     echo=False,  # Disable query logging for security
     future=True,
-    connect_args={
-        "timeout": 10,  # Connection timeout: 10 seconds
-        "command_timeout": 30,  # Command timeout: 30 seconds
-    }
+    connect_args=connect_args
 )
 
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
