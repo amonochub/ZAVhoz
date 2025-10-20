@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Tuple
+from typing import Tuple, Optional
 
 from utils.rate_limiter import rate_limiter
 
@@ -110,3 +110,41 @@ def sanitize_text(text: str) -> str:
         text = text[:10000] + "..."
 
     return text
+
+
+def validate_file(file_type: str, file_size: Optional[int] = None) -> Tuple[bool, str]:
+    """Validate uploaded file type and size.
+    
+    Args:
+        file_type: File type ('photo' or 'document')
+        file_size: File size in bytes (optional)
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    allowed_types = ['photo', 'document']
+    
+    if file_type not in allowed_types:
+        return False, f"❌ Тип файла не поддерживается. Разрешены: {', '.join(allowed_types)}"
+    
+    # Проверяем размер (Telegram обычно ограничивает 20MB)
+    if file_size and file_size > 20 * 1024 * 1024:  # 20MB
+        return False, "❌ Файл слишком большой. Максимум 20 МБ"
+    
+    return True, ""
+
+
+def validate_image_caption(caption: Optional[str]) -> Tuple[bool, str]:
+    """Validate photo caption (description of problem).
+    
+    Args:
+        caption: Photo caption/description
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not caption or not caption.strip():
+        return False, "📝 Для фото обязательно нужно описание проблемы (минимум 3 символа)"
+    
+    # Используем существующую валидацию для названия
+    return validate_request_title(caption)

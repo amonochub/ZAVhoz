@@ -1,54 +1,54 @@
+import logging
 from aiogram import F, types
 
-from models import File
 from utils.auth import require_auth
+from utils.keyboard import get_back_keyboard
+
+logger = logging.getLogger(__name__)
 
 
 @require_auth
 async def handle_photo(message: types.Message, user, session):
-    """Обработка фото"""
+    """Обработка фото вне контекста - направляем пользователя на создание заявки"""
     if not message.photo:
         return
 
-    # Получаем самое большое фото
-    photo = message.photo[-1]
-
-    # Сохраняем информацию о файле
-    file_record = File(
-        request_id=None,  # Будет установлено позже в контексте заявки
-        file_type="photo",
-        file_id=photo.file_id,
-        file_name=None
+    # Вместо сохранения файла без контекста, направляем пользователя
+    await message.reply(
+        "📸 <b>Фото получено!</b>\n\n"
+        "Чтобы создать заявку с этим фото, используйте меню:\n\n"
+        "1️⃣ Нажмите '📝 Создание заявки'\n"
+        "2️⃣ Отправьте фото с описанием проблемы\n\n"
+        "<i>Фото будет автоматически прикреплено к заявке</i>",
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+            [types.InlineKeyboardButton(text="📝 Создать заявку", callback_data="create_request")],
+            [types.InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+        ]),
+        parse_mode="HTML"
     )
 
-    # Здесь можно добавить логику привязки к заявке
-    # Пока просто сохраняем в БД для демонстрации
-
-    session.add(file_record)
-    await session.commit()
-
-    await message.reply("📎 Фото получено и сохранено!")
 
 @require_auth
 async def handle_document(message: types.Message, user, session):
-    """Обработка документов"""
+    """Обработка документов вне контекста - направляем пользователя"""
     if not message.document:
         return
 
     document = message.document
 
-    # Сохраняем информацию о файле
-    file_record = File(
-        request_id=None,  # Будет установлено позже в контексте заявки
-        file_type="document",
-        file_id=document.file_id,
-        file_name=document.file_name
+    await message.reply(
+        f"📄 <b>Документ '{document.file_name}' получен!</b>\n\n"
+        "Чтобы прикрепить документ к заявке, используйте меню:\n\n"
+        "1️⃣ Нажмите '📝 Создание заявки'\n"
+        "2️⃣ Отправьте документ с описанием\n\n"
+        "<i>Документ будет автоматически прикреплен к заявке</i>",
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+            [types.InlineKeyboardButton(text="📝 Создать заявку", callback_data="create_request")],
+            [types.InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+        ]),
+        parse_mode="HTML"
     )
 
-    session.add(file_record)
-    await session.commit()
-
-    await message.reply(f"📎 Документ '{document.file_name}' получен и сохранен!")
 
 def register_file_handlers(dp):
     """Регистрация обработчиков файлов"""
