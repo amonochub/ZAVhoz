@@ -22,7 +22,7 @@ def get_yes_no_keyboard():
 
 @require_auth
 async def description_received(update: types.Message, state: FSMContext, user, session):
-    """Получено описание (фото или текст)"""
+    """Получено описание (фото, документ или текст)"""
     message = update  # update is the Message object for message handlers
     # Проверка rate limit
     if not rate_limiter.is_allowed(message.from_user.id, "create_request", max_requests=5, time_window=300):
@@ -31,15 +31,24 @@ async def description_received(update: types.Message, state: FSMContext, user, s
 
     description = ""
     file_id = None
+    file_type = None
+    file_name = None
 
     # Проверяем фото с подписью
     if message.photo:
         file_id = message.photo[-1].file_id
+        file_type = "photo"
         description = message.caption or "📸 Фото без описания"
+    # Проверяем документ с подписью
+    elif message.document:
+        file_id = message.document.file_id
+        file_type = "document"
+        file_name = message.document.file_name or "документ"
+        description = message.caption or f"📄 {file_name}"
     elif message.text:
         description = message.text.strip()
     else:
-        await message.reply("❌ Отправьте пожалуйста фото или текст описания")
+        await message.reply("❌ Отправьте пожалуйста фото, документ или текст описания")
         return
 
     if not description or len(description.strip()) < 3:
@@ -51,7 +60,12 @@ async def description_received(update: types.Message, state: FSMContext, user, s
         return
 
     # Сохраняем в состояние
-    await state.update_data(description=description, file_id=file_id)
+    await state.update_data(
+        description=description,
+        file_id=file_id,
+        file_type=file_type,
+        file_name=file_name
+    )
 
     # Переходим к вопросу о дополнении
     await state.set_state(CreateRequestStates.waiting_for_additional)
@@ -123,7 +137,8 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
             file = File(
                 request_id=request.id,
                 file_id=data['file_id'],
-                file_type="photo",
+                file_type=data.get('file_type', 'photo'),  # Используем сохраненный тип файла
+                file_name=data.get('file_name'),  # Имя файла (для документов)
                 uploaded_by=user.id
             )
             session.add(file)
