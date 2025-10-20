@@ -4,14 +4,44 @@ from models import Priority
 
 
 def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
-    """Главное меню"""
-    keyboard = [
-        [InlineKeyboardButton(text="📝 Создать заявку", callback_data="create_request")],
-        [InlineKeyboardButton(text="📋 Мои заявки", callback_data="my_requests")],
-    ]
+    """Главное меню - дружелюбное и понятное"""
     if is_admin:
-        keyboard.append([InlineKeyboardButton(text="👑 Панель завхоза", callback_data="admin_panel")])
+        # Меню для завхоза - фокус на управлении заявками
+        keyboard = [
+            [InlineKeyboardButton(text="👑 ПАНЕЛЬ ЗАВХОЗА", callback_data="admin_panel")],
+            [InlineKeyboardButton(text="📋 Мои заявки (как пользователь)", callback_data="my_requests")],
+            [InlineKeyboardButton(text="ℹ️ Справка", callback_data="help_menu")],
+        ]
+    else:
+        # Меню для пользователя - фокус на подачу заявок
+        keyboard = [
+            [InlineKeyboardButton(text="🆘 ПОДАТЬ ЗАЯВКУ НА РЕМОНТ", callback_data="create_request")],
+            [InlineKeyboardButton(text="📋 Мои заявки", callback_data="my_requests")],
+            [InlineKeyboardButton(text="❓ Как это работает?", callback_data="help_user")],
+        ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_user_help_keyboard() -> InlineKeyboardMarkup:
+    """Справка для пользователя - как пользоваться ботом"""
+    keyboard = [
+        [InlineKeyboardButton(text="📸 Как отправить фото?", callback_data="help_photo")],
+        [InlineKeyboardButton(text="⏱️ Как долго ждать?", callback_data="help_timing")],
+        [InlineKeyboardButton(text="🚫 Что если не помогло?", callback_data="help_not_fixed")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_admin_help_keyboard() -> InlineKeyboardMarkup:
+    """Справка для завхоза"""
+    keyboard = [
+        [InlineKeyboardButton(text="📊 Как использовать панель?", callback_data="help_admin_panel")],
+        [InlineKeyboardButton(text="📤 Как экспортировать отчет?", callback_data="help_export")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_admin")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 def get_priority_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура выбора приоритета"""
