@@ -311,12 +311,17 @@ async def go_priority_callback(callback: types.CallbackQuery, state: FSMContext,
 
 def register_create_request_handlers(dp):
     """Регистрация обработчиков создания заявки"""
+    # Описание получаемое в состоянии ожидания описания
     dp.message.register(description_received, CreateRequestStates.waiting_for_description)
+    
+    # Callback обработчики
     dp.callback_query.register(additional_yes_callback, F.data == "additional_yes")
     dp.callback_query.register(additional_no_callback, F.data == "additional_no")
     dp.callback_query.register(priority_selected, F.data.startswith("priority_"))
     dp.callback_query.register(cancel_create_callback, F.data == "cancel_create")
     dp.callback_query.register(add_location_callback, F.data == "add_location")
     dp.callback_query.register(add_comment_callback, F.data == "add_comment")
-    dp.message.register(location_or_comment_received, CreateRequestStates.waiting_for_additional)
     dp.callback_query.register(go_priority_callback, F.data == "go_priority")
+    
+    # Локация или комментарий в состоянии дополнения
+    dp.message.register(location_or_comment_received, CreateRequestStates.waiting_for_additional)
