@@ -177,7 +177,7 @@ async def add_comment_callback(callback: types.CallbackQuery, state: FSMContext,
 async def comment_received(message: types.Message, state: FSMContext, user, session):
     """Комментарий получен"""
     # Проверка rate limit
-    if not rate_limiter.is_allowed(message.from_user.id, "add_comment", max_requests=10, time_window=300):
+    if not await rate_limiter.is_allowed(message.from_user.id, "add_comment", max_requests=10, time_window=300):
         await message.reply("⏱️ Слишком много комментариев. Попробуйте позже.")
         return
 

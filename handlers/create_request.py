@@ -25,7 +25,7 @@ async def description_received(update: types.Message, state: FSMContext, user, s
     """Получено описание (фото, документ или текст)"""
     message = update  # update is the Message object for message handlers
     # Проверка rate limit
-    if not rate_limiter.is_allowed(message.from_user.id, "create_request", max_requests=5, time_window=300):
+    if not await rate_limiter.is_allowed(message.from_user.id, "create_request", max_requests=5, time_window=300):
         await message.reply("⏱️ Слишком много запросов. Попробуйте позже.")
         return
 
