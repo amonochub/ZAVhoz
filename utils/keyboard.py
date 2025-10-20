@@ -40,16 +40,39 @@ def get_request_actions_keyboard(request_id: int, is_admin: bool = False) -> Inl
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 def get_admin_panel_keyboard() -> InlineKeyboardMarkup:
-    """Панель администратора"""
+    """Упрощённая панель завхоза - только необходимые функции"""
     keyboard = [
         [InlineKeyboardButton(text="📋 Открытые заявки", callback_data="admin_open_requests")],
-        [InlineKeyboardButton(text="🎯 Фильтр по приоритету", callback_data="admin_priority_filter")],
-        [InlineKeyboardButton(text="📊 Фильтр по статусу", callback_data="admin_status_filter")],
-        [InlineKeyboardButton(text="📈 Аналитика", callback_data="admin_advanced_analytics")],
+        [InlineKeyboardButton(text="🎯 Фильры", callback_data="admin_filters_menu")],
         [InlineKeyboardButton(text="📊 Статистика", callback_data="admin_stats")],
         [InlineKeyboardButton(text="📁 Архив", callback_data="admin_archive")],
-        [InlineKeyboardButton(text="📤 Экспорт CSV", callback_data="export_csv")],
+        [InlineKeyboardButton(text="📤 Экспорт", callback_data="admin_export_menu")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_admin_filters_menu_keyboard() -> InlineKeyboardMarkup:
+    """Меню фильтров для завхоза"""
+    keyboard = [
+        [InlineKeyboardButton(text="🔴 Высокий приоритет", callback_data="filter_priority_HIGH")],
+        [InlineKeyboardButton(text="🟡 Средний приоритет", callback_data="filter_priority_MEDIUM")],
+        [InlineKeyboardButton(text="⚙️ В работе", callback_data="filter_status_IN_PROGRESS")],
+        [InlineKeyboardButton(text="📅 Сегодня", callback_data="filter_today")],
+        [InlineKeyboardButton(text="📅 На неделю", callback_data="filter_week")],
+        [InlineKeyboardButton(text="📋 Все открытые", callback_data="admin_open_requests")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_admin")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_admin_export_menu_keyboard() -> InlineKeyboardMarkup:
+    """Меню экспорта для завхоза"""
+    keyboard = [
+        [InlineKeyboardButton(text="📊 Отчет за месяц", callback_data="export_month")],
+        [InlineKeyboardButton(text="📈 Статистика", callback_data="export_stats")],
+        [InlineKeyboardButton(text="📋 Все заявки CSV", callback_data="export_all")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_admin")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

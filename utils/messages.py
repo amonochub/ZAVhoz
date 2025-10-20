@@ -43,18 +43,32 @@ def format_request_info(request: Request, show_user: bool = False) -> str:
     return message.strip()
 
 def format_request_list(requests: list[Request], title: str = "Заявки") -> str:
-    """Форматирование списка заявок"""
+    """Улучшенное форматирование списка заявок для завхоза"""
     if not requests:
         return f"📭 {title}: заявок не найдено"
 
     message = f"📋 <b>{title}</b> ({len(requests)}):\n\n"
 
     for i, request in enumerate(requests, 1):
-        status_emoji = STATUS_EMOJIS[request.status]
-        priority_emoji = PRIORITY_EMOJIS[request.priority]
+        # Визуальные индикаторы для быстрого понимания
+        status_emoji = {
+            Status.OPEN: "⏳",        # Ожидает
+            Status.IN_PROGRESS: "🔧", # В работе
+            Status.COMPLETED: "✅",   # Готово
+            Status.REJECTED: "❌"     # Отклонено
+        }[request.status]
 
-        message += f"{i}. {status_emoji}{priority_emoji} #{request.id} - {request.title[:30]}{'...' if len(request.title) > 30 else ''}\n"
-        message += f"   📅 {request.created_at.strftime('%d.%m.%Y')} | 🏢 {request.location}\n\n"
+        priority_emoji = {
+            Priority.HIGH: "🔴",     # Срочная
+            Priority.MEDIUM: "🟡",   # Обычная
+            Priority.LOW: "🟢"       # Не срочная
+        }[request.priority]
+
+        # Компактная информация
+        message += f"{i}. {status_emoji}{priority_emoji} <b>#{request.id}</b>\n"
+        message += f"   📝 {request.title[:40]}{'...' if len(request.title) > 40 else ''}\n"
+        message += f"   📍 {request.location}\n"
+        message += f"   📅 {request.created_at.strftime('%d.%m %H:%M')}\n\n"
 
     return message.strip()
 
