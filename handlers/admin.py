@@ -21,10 +21,14 @@ logger = logging.getLogger(__name__)
 @require_auth
 async def admin_panel_callback(callback: types.CallbackQuery, user, session):
     """Панель завхоза - главное меню"""
+    logger.info(f"🔍 Admin panel access attempt: user_id={user.id}, telegram_id={user.telegram_id}, role={user.role}, is_active={user.is_active}")
+    
     if user.role != "admin":
+        logger.warning(f"❌ Access denied: user {user.telegram_id} tried to access admin panel but has role '{user.role}'")
         await callback.answer("У вас нет доступа")
         return
 
+    logger.info(f"✅ Admin panel opened for user {user.telegram_id}")
     keyboard = get_admin_panel_keyboard()
     await callback.message.edit_text(
         "👑 <b>ПАНЕЛЬ ЗАВХОЗА</b>\n\n🔧 Управление заявками на ремонт",
