@@ -117,42 +117,62 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
         priority = Priority(priority_value)
 
         data = await state.get_data()
+        logger.info(f"State data keys: {list(data.keys())}")
         logger.info(f"State data: {data}")
 
-        # Валидируем описание
+        # СТРОГАЯ валидация description
         description = data.get('description', '').strip()
         if not description:
+            logger.error(f"Empty description in state data: {data}")
             await callback.message.edit_text(
-                "❌ Ошибка: Описание заявки не может быть пустым",
-                reply_markup=get_back_keyboard("back_to_main")
+                "❌ <b>Ошибка создания заявки</b>\n\n"
+                "Описание заявки не найдено. Попробуйте создать заявку заново.",
+                reply_markup=get_back_keyboard("back_to_main"),
+                parse_mode="HTML"
+            )
+            await state.clear()
+            await callback.answer("Ошибка валидации", show_alert=True)
+            return
+
+        # Дополнительная валидация
+        from utils.validation import validate_request_description
+        is_valid, error_msg = validate_request_description(description)
+        if not is_valid:
+            await callback.message.edit_text(
+                f"❌ <b>Ошибка валидации</b>\n\n{error_msg}",
+                reply_markup=get_back_keyboard("back_to_main"),
+                parse_mode="HTML"
             )
             await callback.answer("Ошибка валидации", show_alert=True)
             return
 
+        # Создание title с гарантией не пустоты
+        title = description[:100].strip()
+        if not title:
+            title = "Заявка"
+        
+        logger.info(f"Creating request with title: {title}, description length: {len(description)}")
+
         # Создаём заявку
-        title = description[:100] if description else "Заявка без названия"
-        if not title or not title.strip():
-            title = "Заявка"  # Fallback если что-то пошло не так
-            
         request = Request(
             user_id=user.id,
-            title=title.strip(),  # Удаляем пробелы
+            title=title,
             description=description,
-            location=data.get('location', 'Не указано'),  # Используем сохранённую локацию или дефолт
+            location=data.get('location', 'Не указано'),
             priority=priority
         )
         session.add(request)
         await session.commit()
         await session.refresh(request)
-        logger.info(f"Request created: ID={request.id}, user_id={user.id}")
+        logger.info(f"Request created: ID={request.id}, user_id={user.id}, title={title}")
 
         # Если есть фото - прикрепляем файл
         if data.get('file_id'):
             file = File(
                 request_id=request.id,
                 file_id=data['file_id'],
-                file_type=data.get('file_type', 'photo'),  # Используем сохраненный тип файла
-                file_name=data.get('file_name'),  # Имя файла (для документов)
+                file_type=data.get('file_type', 'photo'),
+                file_name=data.get('file_name'),
                 uploaded_by=user.id
             )
             session.add(file)
@@ -179,7 +199,7 @@ async def priority_selected(callback: types.CallbackQuery, state: FSMContext, us
 
         await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         await callback.answer()
-        logger.info("User notified about successful request creation")
+        logger.info(f"User notified about successful request creation")
 
     except Exception as e:
         logger.error(f"Error creating request: {e}", exc_info=True)
