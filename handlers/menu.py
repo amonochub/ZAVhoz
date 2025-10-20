@@ -76,10 +76,6 @@ async def my_requests_callback(callback: types.CallbackQuery, user, session):
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
-async def back_to_main_callback(callback: types.CallbackQuery):
-    """Возврат в главное меню"""
-    await main_menu_callback(callback)
-
 @require_auth
 async def help_user_callback(callback: types.CallbackQuery, user, session):
     """Справка для пользователя"""
